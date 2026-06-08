@@ -1,0 +1,36 @@
+name: Daily Car Data Update
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # UTC 01:00 = JST 10:00
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        run: python main.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Commit updated data
+        run: |
+          git config user.email "bot@jpusedcars.com"
+          git config user.name "Daily Update Bot"
+          git add website/public/data/cars.json
+          git diff --staged --quiet || git commit -m "chore: daily update $(date +%Y-%m-%d)"
+          git push
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::Pipeline failed — check scraper logs"

@@ -1,0 +1,41 @@
+target_models:
+  - name: prado
+    display_name: "Toyota Land Cruiser Prado"
+    url: "https://www.carsensor.net/usedcar/search.php?BRDC=TO&CARC=TO_028_"
+    max_pages: 5
+  - name: hilux
+    display_name: "Toyota Hilux"
+    url: "https://www.carsensor.net/usedcar/search.php?BRDC=TO&CARC=TO_031_"
+    max_pages: 5
+  - name: hiace
+    display_name: "Toyota HiAce"
+    url: "https://www.carsensor.net/usedcar/search.php?BRDC=TO&CARC=TO_027_"
+    max_pages: 5
+
+shipping:
+  default_usd: 2500
+  destinations:
+    australia: 3000
+    africa: 3500
+    middle_east: 2800
+
+scraper:
+  delay_seconds: 2
+  timeout_seconds: 15
+  max_retries: 3
+  user_agents:
+    - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+    - "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36"
+    - "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"
+    - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/118.0.0.0 Safari/537.36"
+    - "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 Safari/605.1.15"
+
+price:
+  round_to: 100  # Round USD price to nearest $100
+
+translation:
+  use_claude: false  # Set true to use Claude API for descriptions
+  fallback_to_google: true
+
+schedule:
+  cron: "0 1 * * *"  # UTC 01:00 = JST 10:00
