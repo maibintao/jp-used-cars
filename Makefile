@@ -16,11 +16,13 @@ task:
 	@cat $(TASK_FILE)
 
 # ── Codex 执行当前任务 ────────────────────────────────────────
+# Codex requires an interactive terminal — use ./run_task.sh instead of make run
 .PHONY: run
 run:
-	@echo "🤖 Sending task to Codex..."
+	@echo "👉 Codex needs a real terminal. Run this instead:"
 	@echo ""
-	codex "$(shell cat $(TASK_FILE))"
+	@echo "   ./run_task.sh"
+	@echo ""
 
 # ── 生成 diff 供 Claude Code 审查 ────────────────────────────
 .PHONY: review
