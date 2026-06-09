@@ -6,3 +6,7 @@ __pycache__/
 node_modules/
 .next/
 tasks/codex_output.diff
+.DS_Store
+.env
+.venv/
+venv/
