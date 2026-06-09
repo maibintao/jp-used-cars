@@ -138,9 +138,68 @@ def parse_car_card(item) -> dict | None:
 def get_next_page_url(soup: BeautifulSoup, current_page: int) -> str | None:
     """
     Return the URL for the next page, or None if on the last page.
-    (Stub for Day 1 - implement in Day 2)
     """
-    return None  # TODO: implement in Day 2
+    next_page = str(current_page + 1)
+
+    for link in soup.find_all("a", href=True):
+        text = _clean_text(link.get_text(" ", strip=True))
+        href = link["href"]
+        if text and "次へ" in text:
+            return urljoin(BASE_URL, href)
+
+        query = parse_qs(urlparse(href).query)
+        if query.get("PN") == [next_page]:
+            return urljoin(BASE_URL, href)
+
+    return None
+
+
+def scrape_all_pages(
+    url: str,
+    max_pages: int | None = None,
+    model_name: str | None = None,
+) -> list[dict]:
+    """
+    Scrape all pages for a given model URL.
+
+    Args:
+        url: Base search URL
+        max_pages: Optional page cap. If None, resolve from config.yaml.
+        model_name: Optional model label used for progress output.
+
+    Returns:
+        Deduplicated list of car dicts (dedup by source_id).
+    """
+    config = load_config()
+    page_limit = max_pages if max_pages is not None else _resolve_max_pages(url, config)
+    delay_seconds = config.get("scraper", {}).get("delay_seconds", 2)
+    page = 1
+    seen_source_ids: set[str] = set()
+    cars: list[dict] = []
+    current_url = _canonicalize_url(url, config)
+
+    while True:
+        total_label = str(page_limit) if page_limit is not None else "?"
+        prefix = f"Scraping {model_name} page" if model_name else "Scraping page"
+        print(f"{prefix} {page}/{total_label}...")
+
+        page_cars = scrape_listing_page(current_url, page=page)
+        if not page_cars:
+            break
+
+        for car in page_cars:
+            source_id = car.get("source_id")
+            if source_id and source_id not in seen_source_ids:
+                seen_source_ids.add(source_id)
+                cars.append(car)
+
+        if page_limit is not None and page >= page_limit:
+            break
+
+        time.sleep(delay_seconds)
+        page += 1
+
+    return cars
 
 
 def _parse_price_jpy(text: str | None) -> int | None:
@@ -192,6 +251,17 @@ def _parse_year(text: str | None) -> int | None:
 def _canonicalize_url(url: str, config: dict) -> str:
     aliases = config.get("scraper", {}).get("url_aliases", {})
     return aliases.get(url, url)
+
+
+def _resolve_max_pages(url: str, config: dict) -> int | None:
+    canonical_url = _canonicalize_url(url, config)
+    for model in config.get("target_models", []):
+        model_url = model.get("url")
+        if not model_url:
+            continue
+        if url == model_url or canonical_url == _canonicalize_url(model_url, config):
+            return model.get("max_pages")
+    return config.get("scraper", {}).get("max_pages")
 
 
 def _build_page_url(url: str, page: int) -> str:

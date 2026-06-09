@@ -2,6 +2,8 @@
 
 import time
 
+from bs4 import BeautifulSoup
+
 from scraper.carsensor_scraper import (
     _parse_mileage_km,
     _parse_price_jpy,
@@ -55,3 +57,74 @@ class TestListingPage:
 
         priced = [c for c in cars if c["price_jpy"] is not None]
         assert len(priced) >= 5, f"Too few priced cars: {len(priced)}"
+
+
+class TestPagination:
+    """Test pagination logic - no HTTP needed."""
+
+    def test_page_url_page1(self):
+        from scraper.carsensor_scraper import _build_page_url
+
+        url = "https://www.carsensor.net/usedcar/search.php?CARC=TO_S152"
+        assert _build_page_url(url, 1) == url
+
+    def test_page_url_page2(self):
+        from scraper.carsensor_scraper import _build_page_url
+
+        url = "https://www.carsensor.net/usedcar/search.php?CARC=TO_S152"
+        result = _build_page_url(url, 2)
+        assert "PN=2" in result
+
+    def test_next_page_url_from_link(self):
+        from scraper.carsensor_scraper import get_next_page_url
+
+        soup = BeautifulSoup(
+            '<a href="/usedcar/search.php?CARC=TO_S152&PN=2">次へ</a>',
+            "lxml",
+        )
+        assert get_next_page_url(soup, 1) == "https://www.carsensor.net/usedcar/search.php?CARC=TO_S152&PN=2"
+
+
+class TestDetailScraper:
+    """Test detail scraper failure behavior - no HTTP needed."""
+
+    def test_detail_http_error_returns_empty_defaults(self, monkeypatch):
+        import requests
+        from scraper.detail_scraper import scrape_detail
+
+        def raise_timeout(*args, **kwargs):
+            raise requests.Timeout("timeout")
+
+        monkeypatch.setattr("scraper.detail_scraper.time.sleep", lambda *_: None)
+        monkeypatch.setattr("scraper.detail_scraper.requests.get", raise_timeout)
+
+        assert scrape_detail("https://www.carsensor.net/usedcar/detail/AU000/index.html") == {
+            "images": [],
+            "description_ja": None,
+            "specs": {},
+        }
+
+
+class TestPipeline:
+    """Test pipeline with skip_details=True - no detail HTTP requests."""
+
+    def test_pipeline_skip_details(self):
+        from scraper.pipeline import run
+
+        time.sleep(2)
+        cars = run(skip_details=True)
+        assert len(cars) > 0
+        assert all("model" in c for c in cars)
+        assert all("scraped_at" in c for c in cars)
+        assert all("source_id" in c for c in cars)
+
+    def test_json_output_exists(self):
+        import json
+        from pathlib import Path
+
+        output = Path("website/public/data/cars.json")
+        assert output.exists()
+        data = json.loads(output.read_text())
+        assert "cars" in data
+        assert "updated_at" in data
+        assert data["total"] == len(data["cars"])
