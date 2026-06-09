@@ -1,4 +1,6 @@
 .env
+.env.local
+.env.production.local
 *.db
 __pycache__/
 *.pyc
@@ -7,6 +9,9 @@ node_modules/
 .next/
 tasks/codex_output.diff
 .DS_Store
+website/.DS_Store
 .env
 .venv/
 venv/
+website/node_modules/
+website/.next/

@@ -1,36 +1,50 @@
 name: Daily Car Data Update
 
-on:
+"on":
   schedule:
-    - cron: "0 1 * * *"   # UTC 01:00 = JST 10:00
-  workflow_dispatch:
+    - cron: "0 1 * * *"   # UTC 01:00 = JST 10:00 every day
+  workflow_dispatch:        # Allow manual trigger from GitHub UI
 
 jobs:
-  update:
+  scrape-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 30
 
-      - uses: actions/setup-python@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Run pipeline
+      - name: Run scraper pipeline
         run: python main.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-      - name: Commit updated data
+      - name: Validate output
+        run: python scripts/health_check.py
+
+      - name: Commit updated cars.json
         run: |
           git config user.email "bot@jpusedcars.com"
           git config user.name "Daily Update Bot"
           git add website/public/data/cars.json
-          git diff --staged --quiet || git commit -m "chore: daily update $(date +%Y-%m-%d)"
-          git push
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "data: daily update $(date -u +%Y-%m-%d)"
+
+      - name: Push changes
+        run: git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify on failure
         if: failure()
-        run: echo "::error::Pipeline failed — check scraper logs"
+        run: |
+          echo "::error::Daily scrape failed. Check logs above."
