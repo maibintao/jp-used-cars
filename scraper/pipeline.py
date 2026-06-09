@@ -52,7 +52,7 @@ def run(skip_details: bool = False) -> list[dict]:
                 cars.append(_merge(base_car, {}))
                 continue
 
-            print(f"Fetching details {detail_index}/{len(list_cars)}...")
+            print(f"Fetching details {detail_index}/{len(list_cars)} for {model_name}...")
             detail_url = base_car.get("detail_url")
             detail = scrape_detail(detail_url) if detail_url else {}
             cars.append(_merge(base_car, detail))
@@ -86,9 +86,27 @@ def _export(cars: list[dict], path: Path) -> None:
     payload = {
         "updated_at": _utc_now(),
         "total": len(cars),
-        "cars": cars,
+        "cars": _normalize_specs(cars),
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _normalize_specs(cars: list[dict]) -> list[dict]:
+    """Keep generated JSON specs type-stable for TypeScript imports."""
+    spec_keys = sorted({key for car in cars for key in (car.get("specs") or {})})
+    if not spec_keys:
+        return cars
+
+    normalized_cars = []
+    for car in cars:
+        specs = car.get("specs") or {}
+        normalized_cars.append(
+            {
+                **car,
+                "specs": {key: str(specs.get(key) or "") for key in spec_keys},
+            }
+        )
+    return normalized_cars
 
 
 def _fallback_images(list_car: dict) -> list[str]:

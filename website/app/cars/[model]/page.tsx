@@ -23,12 +23,16 @@ export async function generateStaticParams() {
 }
 
 export function generateMetadata({ params }: ModelPageProps) {
-  const title = isModel(params.model)
-    ? `${MODEL_LABELS[params.model]} listings`
-    : "No listings found";
+  const label = isModel(params.model) ? MODEL_LABELS[params.model] : params.model;
+  const image = getCarsByModel(params.model).find((car) => car.images[0])
+    ?.images[0];
 
   return {
-    title: `${title} | Japan Auto Export`,
+    title: label,
+    description: `Browse used ${label} listings imported from Japan. All prices include shipping.`,
+    openGraph: {
+      images: image ? [{ url: image }] : [],
+    },
   };
 }
 
@@ -64,7 +68,7 @@ export default function ModelPage({ params }: ModelPageProps) {
         </div>
 
         {cars.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {cars.map((car) => (
               <CarCard key={car.source_id} car={car} />
             ))}

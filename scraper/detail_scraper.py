@@ -6,7 +6,7 @@ specs table, and seller description.
 from __future__ import annotations
 
 import time
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -36,36 +36,55 @@ def scrape_detail(detail_url: str) -> dict:
         response.raise_for_status()
         soup = BeautifulSoup(response.content, "lxml")
         return {
-            "images": _extract_images(soup, detail_url),
+            "images": _extract_images(soup),
             "description_ja": _extract_description(soup),
             "specs": _extract_specs(soup),
         }
-    except Exception:
+    except Exception as exc:
+        print(f"Detail scrape error for {detail_url}: {exc}")
         return EMPTY_DETAIL.copy()
 
 
-def _extract_images(soup: BeautifulSoup, page_url: str) -> list[str]:
-    image_urls: list[str] = []
-    selectors = [
-        ".detailSlider img",
-        ".js-photo img",
-        ".miniSlider img",
-        ".subSliderMain img",
-        'img[src*="CSphoto"]',
-        'img[data-src*="CSphoto"]',
-        'img[data-original*="CSphoto"]',
-    ]
+def _extract_images(soup: BeautifulSoup) -> list[str]:
+    """
+    Try multiple selector strategies to find all car photos.
+    Returns deduplicated absolute URLs, max 10.
+    """
+    candidates: list[str] = []
 
-    for selector in selectors:
-        for img in soup.select(selector):
-            raw_url = img.get("data-src") or img.get("data-original") or img.get("src")
-            absolute_url = _absolute_url(raw_url, page_url)
-            if absolute_url and absolute_url not in image_urls:
-                image_urls.append(absolute_url)
-            if len(image_urls) >= 10:
-                return image_urls
+    for noscript in soup.find_all("noscript"):
+        inner = BeautifulSoup(noscript.get_text(), "html.parser")
+        for img in inner.find_all("img"):
+            src = img.get("src") or img.get("data-src") or img.get("data-original")
+            if src and _is_car_photo(src):
+                candidates.append(src)
+
+    for img in soup.find_all("img"):
+        src = img.get("data-original") or img.get("data-src") or img.get("src")
+        if src and _is_car_photo(src):
+            candidates.append(src)
+
+    seen: set[str] = set()
+    image_urls: list[str] = []
+    for src in candidates:
+        absolute_url = _absolute_url(src)
+        if absolute_url and absolute_url not in seen:
+            seen.add(absolute_url)
+            image_urls.append(absolute_url)
+        if len(image_urls) >= 10:
+            break
 
     return image_urls
+
+
+def _is_car_photo(url: str) -> bool:
+    """Filter out icons, logos, banners, and keep likely car photos."""
+    url_lower = url.lower()
+    path_lower = urlparse(url_lower).path
+    is_photo_cdn = "carsensor" in url_lower or "ccsrpcma" in url_lower or "ccsrpcml" in url_lower
+    is_image = any(path_lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"])
+    is_not_icon = "icon" not in url_lower and "logo" not in url_lower
+    return (is_photo_cdn or is_image) and is_image and is_not_icon
 
 
 def _extract_description(soup: BeautifulSoup) -> str | None:
@@ -103,12 +122,16 @@ def _extract_specs(soup: BeautifulSoup) -> dict[str, str]:
     return specs
 
 
-def _absolute_url(raw_url: str | None, page_url: str) -> str | None:
+def _absolute_url(raw_url: str | None) -> str | None:
     if not raw_url:
+        return None
+    if raw_url.startswith("data:"):
         return None
     if raw_url.startswith("//"):
         return "https:" + raw_url
-    return urljoin(page_url or BASE_URL, raw_url)
+    if raw_url.startswith("http"):
+        return raw_url
+    return urljoin(BASE_URL, raw_url)
 
 
 def _clean_spec_key(text: str | None) -> str | None:

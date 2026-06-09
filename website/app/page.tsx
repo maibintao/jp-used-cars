@@ -9,6 +9,17 @@ import {
   sortNewestFirst,
 } from "@/lib/cars";
 
+const defaultOgImage = getAllCars().find((car) => car.images[0])?.images[0];
+
+export const metadata = {
+  title: "JP Used Cars — Quality Japanese Used Cars",
+  description:
+    "Browse Toyota Prado, Hilux, HiAce and more. Updated daily from Japan.",
+  openGraph: {
+    images: defaultOgImage ? [{ url: defaultOgImage }] : [],
+  },
+};
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
@@ -17,9 +28,26 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function daysAgo(value: string): string {
+  const updatedAt = new Date(value).getTime();
+  const now = Date.now();
+  const days = Math.max(0, Math.floor((now - updatedAt) / 86_400_000));
+
+  if (days === 0) {
+    return "Updated today";
+  }
+
+  if (days === 1) {
+    return "Updated 1 day ago";
+  }
+
+  return `Updated ${days} days ago`;
+}
+
 export default function Home() {
   const cars = getAllCars();
   const latestCars = sortNewestFirst(cars).slice(0, 6);
+  const updatedAt = getUpdatedAt();
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -62,9 +90,11 @@ export default function Home() {
             <p className="text-sm font-medium text-slate-500">Models available</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-slate-950">Updated daily</p>
+            <p className="text-3xl font-bold text-slate-950">
+              {daysAgo(updatedAt)}
+            </p>
             <p className="text-sm font-medium text-slate-500">
-              Last refresh {formatDate(getUpdatedAt())}
+              Last refresh {formatDate(updatedAt)}
             </p>
           </div>
         </div>

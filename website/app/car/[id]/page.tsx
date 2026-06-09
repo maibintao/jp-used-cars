@@ -18,7 +18,7 @@ interface CarDetailPageProps {
   };
 }
 
-const WHATSAPP_NUMBER = "+8190000000000";
+const whatsappNumber = "819000000000";
 
 export const dynamicParams = false;
 
@@ -26,12 +26,26 @@ export async function generateStaticParams() {
   return getAllCars().map((car) => ({ id: car.source_id }));
 }
 
-export function generateMetadata({ params }: CarDetailPageProps) {
+export async function generateMetadata({ params }: CarDetailPageProps) {
   const car = getCarById(params.id);
-  const title = car ? car.title_en || car.title_ja : "Car not found";
+
+  if (!car) {
+    return { title: "Car Not Found" };
+  }
+
+  const title = car.title_en ?? car.title_ja ?? car.source_id;
+  const year = car.year ?? "";
+  const price = car.total_usd ? `$${car.total_usd.toLocaleString()} C&F` : "Price on request";
+  const mileage = car.mileage_km
+    ? `${car.mileage_km.toLocaleString()} km`
+    : "Mileage unknown";
 
   return {
-    title: `${title} | Japan Auto Export`,
+    title,
+    description: `${year} ${car.title_en ?? ""} — ${price}. ${mileage}.`,
+    openGraph: {
+      images: car.images[0] ? [{ url: car.images[0] }] : [],
+    },
   };
 }
 
@@ -51,6 +65,16 @@ function modelDisplayName(model: string): string {
   return MODEL_LABELS[model].replace("Toyota ", "");
 }
 
+function modelShortName(model: string): string {
+  if (!isModel(model)) {
+    return model;
+  }
+
+  return MODEL_LABELS[model]
+    .replace("Toyota Land Cruiser ", "")
+    .replace("Toyota ", "");
+}
+
 export default function CarDetailPage({ params }: CarDetailPageProps) {
   const car = getCarById(params.id);
 
@@ -58,17 +82,20 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
     notFound();
   }
 
-  const title = car.title_en || car.title_ja;
+  const title = car.title_en ?? car.title_ja ?? car.source_id;
   const activeModel: Model | undefined = isModel(car.model) ? car.model : undefined;
   const color = car.color_en || car.color_ja || "Color not listed";
   const description = car.description_en || car.description_ja;
+  const carTitle = car.title_en ?? car.title_ja ?? car.source_id;
   const whatsappText = encodeURIComponent(
-    `Hi, I'm interested in ${title} (ID: ${car.source_id})`,
+    `Hi, I'm interested in this car:\n${carTitle}\nID: ${car.source_id}\nTotal Price: $${car.total_usd?.toLocaleString()}\n\nPlease send more details.`,
   );
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER.replace(
-    /\D/g,
-    "",
-  )}?text=${whatsappText}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappText}`;
+  const emailSubject = encodeURIComponent(`Inquiry: ${carTitle}`);
+  const emailBody = encodeURIComponent(
+    `Hi,\n\nI'm interested in the following car:\n\nTitle: ${carTitle}\nID: ${car.source_id}\nYear: ${car.year}\nMileage: ${car.mileage_km?.toLocaleString()} km\nTotal Price: $${car.total_usd?.toLocaleString()} (C&F)\n\nPlease send more details.\n\nThank you`,
+  );
+  const emailUrl = `mailto:info@jpusedcars.com?subject=${emailSubject}&body=${emailBody}`;
   const specs = Object.entries(car.specs);
 
   return (
@@ -98,9 +125,9 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
               />
             </div>
 
-            <div className="mt-6 grid gap-3">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               <a
-                href={whatsappHref}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
@@ -111,17 +138,35 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
                 Inquire via WhatsApp
               </a>
               <a
-                href={car.detail_url}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={emailUrl}
                 className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:border-slate-400 hover:bg-slate-50"
               >
-                View on Carsensor.net -&gt;
+                <span aria-hidden="true" className="mr-2">
+                  ✉️
+                </span>
+                Send Email Inquiry
               </a>
             </div>
+
+            <a
+              href={car.detail_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:border-slate-400 hover:bg-slate-50"
+            >
+              View on Carsensor.net -&gt;
+            </a>
           </aside>
         </div>
 
+        {MODELS.includes(car.model as (typeof MODELS)[number]) ? (
+          <Link
+            href={`/cars/${car.model}`}
+            className="mt-6 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-800"
+          >
+            ← Back to {modelShortName(car.model)} listings
+          </Link>
+        ) : null}
         <section className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-xl font-bold text-slate-950">Specs</h2>
@@ -154,15 +199,6 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
             </p>
           </div>
         </section>
-
-        {MODELS.includes(car.model as (typeof MODELS)[number]) ? (
-          <Link
-            href={`/cars/${car.model}`}
-            className="mt-8 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-800"
-          >
-            &lt;- Back to {modelDisplayName(car.model)} listings
-          </Link>
-        ) : null}
       </article>
     </main>
   );

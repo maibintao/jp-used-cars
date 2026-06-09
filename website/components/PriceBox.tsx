@@ -30,20 +30,22 @@ export default function PriceBox({
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-4 text-sm shadow-sm">
-      <div className="flex items-center justify-between gap-4 text-slate-700">
-        <span>Car Price</span>
-        <span className="font-semibold text-slate-950">{formatUsd(price_usd)}</span>
+      <div className="flex min-w-0 items-center justify-between gap-4 text-slate-700">
+        <span className="min-w-0">Car Price</span>
+        <span className="min-w-0 text-right font-semibold text-slate-950">
+          {formatUsd(price_usd)}
+        </span>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-4 text-slate-700">
-        <span>+ Shipping</span>
-        <span className="font-semibold text-slate-950">
+      <div className="mt-2 flex min-w-0 items-center justify-between gap-4 text-slate-700">
+        <span className="min-w-0">+ Shipping</span>
+        <span className="min-w-0 text-right font-semibold text-slate-950">
           + {formatUsd(shipping_usd)}
         </span>
       </div>
       <div className="my-3 border-t border-slate-200" />
-      <div className="flex items-center justify-between gap-4 text-base font-bold text-emerald-700">
-        <span>Total (C&amp;F)</span>
-        <span>{formatUsd(total_usd)}</span>
+      <div className="flex min-w-0 items-center justify-between gap-4 text-base font-bold text-emerald-700">
+        <span className="min-w-0">Total (C&amp;F)</span>
+        <span className="min-w-0 text-right">{formatUsd(total_usd)}</span>
       </div>
     </div>
   );
