@@ -10,6 +10,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from processor.price_converter import process_car_price
+from processor.translator import translate_car
+
 from .carsensor_scraper import load_config, scrape_all_pages
 from .detail_scraper import scrape_detail
 
@@ -55,8 +58,16 @@ def run(skip_details: bool = False) -> list[dict]:
             cars.append(_merge(base_car, detail))
             time.sleep(1)
 
-    _export(cars, OUTPUT_PATH)
-    return cars
+    print("🌐 Translating to English...")
+    print("💱 Converting prices to USD...")
+    enriched = []
+    for car in cars:
+        car = translate_car(car)
+        car = process_car_price(car, config)
+        enriched.append(car)
+
+    _export(enriched, OUTPUT_PATH)
+    return enriched
 
 
 def _merge(list_car: dict, detail: dict) -> dict:
