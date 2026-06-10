@@ -17,7 +17,7 @@ target_models:
     max_pages: 3
   - name: harrier
     display_name: "Toyota Harrier"
-    url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S240"
+    url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S114"
     max_pages: 3
   - name: rav4
     display_name: "Toyota RAV4"

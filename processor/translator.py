@@ -43,9 +43,17 @@ def translate_title(title_ja: str | None) -> str | None:
     if not title_ja:
         return None
 
+    from .vocabulary import VOCAB
+
     title = title_ja.strip()
-    for ja_name, en_name in CAR_NAME_MAPPINGS.items():
+    # Replace model names first (longest match first)
+    for ja_name, en_name in sorted(CAR_NAME_MAPPINGS.items(), key=lambda x: -len(x[0])):
         title = title.replace(ja_name, en_name)
+
+    # Replace multi-word vocabulary entries (longest first, before splitting)
+    for ja, en in sorted(VOCAB.items(), key=lambda x: -len(x[0])):
+        if len(ja) >= 3 and ja in title:
+            title = title.replace(ja, en)
 
     translated_tokens: list[str] = []
     for token in title.split():
@@ -74,10 +82,21 @@ def translate_description(description_ja: str | None) -> str | None:
 def translate_specs(specs: dict) -> dict:
     """Translate specs keys and values using vocabulary table."""
     from .vocabulary import VOCAB
+
+    def _lookup(text: str) -> str:
+        text = text.strip()
+        if text in VOCAB:
+            return VOCAB[text]
+        # Partial match: check if any vocab key appears in text
+        for ja, en in sorted(VOCAB.items(), key=lambda x: -len(x[0])):
+            if ja in text and len(ja) >= 2:
+                return text.replace(ja, en)
+        return text
+
     result = {}
     for key, value in specs.items():
-        en_key = VOCAB.get(key.strip(), key)
-        en_value = VOCAB.get(str(value).strip(), str(value)) if value else value
+        en_key = _lookup(key)
+        en_value = _lookup(str(value)) if value and str(value).strip() not in ("", "－", "−") else value
         result[en_key] = en_value
     return result
 
