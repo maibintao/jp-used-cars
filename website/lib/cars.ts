@@ -19,7 +19,7 @@ export interface Car {
   description_ja: string | null;
   description_en: string | null;
   specs: Record<string, string>;
-  specs_en?: Record<string, string>;
+  specs_en?: Record<string, string | undefined>;
   detail_url: string;
   scraped_at: string;
 }

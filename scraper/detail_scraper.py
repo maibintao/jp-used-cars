@@ -71,7 +71,7 @@ def _extract_images(soup: BeautifulSoup) -> list[str]:
         if absolute_url and absolute_url not in seen:
             seen.add(absolute_url)
             image_urls.append(absolute_url)
-        if len(image_urls) >= 10:
+        if len(image_urls) >= 20:
             break
 
     return image_urls

@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 CARS_JSON = Path("website/public/data/cars.json")
-MIN_CARS = 50          # Alert if we get fewer than this
+MIN_CARS = 100         # Alert if we get fewer than this
 MIN_AVG_IMAGES = 3.0   # Alert if average images drops below this
 REQUIRED_FIELDS = {
     "source_id", "model", "title_ja", "year",
@@ -39,7 +39,7 @@ def main():
 
     # Check models present
     models = {c["model"] for c in cars}
-    for m in ["prado", "hilux", "hiace"]:
+    for m in ["prado", "hilux", "hiace", "harrier", "rav4"]:
         if m not in models:
             errors.append(f"Model '{m}' missing from output")
 

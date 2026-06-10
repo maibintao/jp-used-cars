@@ -12,9 +12,19 @@ from .vocabulary import lookup, translate_with_vocab
 
 CAR_NAME_MAPPINGS = {
     "ランドクルーザープラド": "Land Cruiser Prado",
+    "ランドクルーザー": "Land Cruiser",
     "ハイラックス": "Hilux",
     "ハイエース": "HiAce",
     "アルファード": "Alphard",
+    "ヴェルファイア": "Vellfire",
+    "ヴォクシー": "Voxy",
+    "ノア": "Noah",
+    "ハリアー": "Harrier",
+    "クラウン": "Crown",
+    "エクストレイル": "X-Trail",
+    "パジェロ": "Pajero",
+    "プリウス": "Prius",
+    "レクサス": "Lexus",
 }
 
 
@@ -61,18 +71,30 @@ def translate_description(description_ja: str | None) -> str | None:
         return None
 
 
+def translate_specs(specs: dict) -> dict:
+    """Translate specs keys and values using vocabulary table."""
+    from .vocabulary import VOCAB
+    result = {}
+    for key, value in specs.items():
+        en_key = VOCAB.get(key.strip(), key)
+        en_value = VOCAB.get(str(value).strip(), str(value)) if value else value
+        result[en_key] = en_value
+    return result
+
+
 def translate_car(car: dict) -> dict:
     """
     Add *_en fields to a car dict. Never modifies *_ja fields.
 
     Adds:
-        title_en, color_en, description_en
+        title_en, color_en, description_en, specs_en
     """
     return {
         **car,
         "title_en": translate_title(car.get("title_ja")),
         "color_en": translate_color(car.get("color_ja")),
         "description_en": translate_description(car.get("description_ja")),
+        "specs_en": translate_specs(car.get("specs", {})),
     }
 
 
