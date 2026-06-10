@@ -96,7 +96,20 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
     `Hi,\n\nI'm interested in the following car:\n\nTitle: ${carTitle}\nID: ${car.source_id}\nYear: ${car.year}\nMileage: ${car.mileage_km?.toLocaleString()} km\nTotal Price: $${car.total_usd?.toLocaleString()} (C&F)\n\nPlease send more details.\n\nThank you`,
   );
   const emailUrl = `mailto:info@jpusedcars.com?subject=${emailSubject}&body=${emailBody}`;
-  const specs = Object.entries(car.specs_en ?? car.specs);
+
+  // Show only meaningful car specs: English keys, short values, skip price/admin rows
+  const CJK = /[　-鿿＀-￯]/;
+  const SKIP_KEYS = /プラン|支払|諸費用|車両本体|発売年月|車台|残価|対象車両|納車前|部品交換|サービス|回転半径|室内|シート列|燃費|Bプラン/;
+  const specs = Object.entries(car.specs_en ?? car.specs).filter(
+    ([k, v]) =>
+      k &&
+      !CJK.test(k) &&
+      !SKIP_KEYS.test(k) &&
+      v != null &&
+      String(v).trim() !== "" &&
+      String(v).trim() !== "－" &&
+      String(v).length < 120,
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
