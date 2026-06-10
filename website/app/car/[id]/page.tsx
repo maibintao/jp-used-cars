@@ -96,7 +96,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
     `Hi,\n\nI'm interested in the following car:\n\nTitle: ${carTitle}\nID: ${car.source_id}\nYear: ${car.year}\nMileage: ${car.mileage_km?.toLocaleString()} km\nTotal Price: $${car.total_usd?.toLocaleString()} (C&F)\n\nPlease send more details.\n\nThank you`,
   );
   const emailUrl = `mailto:info@jpusedcars.com?subject=${emailSubject}&body=${emailBody}`;
-  const specs = Object.entries(car.specs);
+  const specs = Object.entries(car.specs_en ?? car.specs);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -159,7 +159,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
           </aside>
         </div>
 
-        {MODELS.includes(car.model as (typeof MODELS)[number]) ? (
+        {MODELS.includes(car.model) ? (
           <Link
             href={`/cars/${car.model}`}
             className="mt-6 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-800"

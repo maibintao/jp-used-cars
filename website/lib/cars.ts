@@ -19,6 +19,7 @@ export interface Car {
   description_ja: string | null;
   description_en: string | null;
   specs: Record<string, string>;
+  specs_en?: Record<string, string>;
   detail_url: string;
   scraped_at: string;
 }
@@ -33,11 +34,26 @@ export const MODEL_LABELS: Record<string, string> = {
   prado: "Toyota Land Cruiser Prado",
   hilux: "Toyota Hilux",
   hiace: "Toyota HiAce",
+  landcruiser: "Toyota Land Cruiser",
+  harrier: "Toyota Harrier",
+  rav4: "Toyota RAV4",
+  crown: "Toyota Crown",
+  voxy: "Toyota Voxy",
+  noah: "Toyota Noah",
+  alphard: "Toyota Alphard",
+  lexus_lx: "Lexus LX",
+  xtrail: "Nissan X-Trail",
+  cx3: "Mazda CX-3",
+  cx5: "Mazda CX-5",
+  audi_q7: "Audi Q7",
+  audi_q8: "Audi Q8",
+  pajero: "Mitsubishi Pajero",
+  crv: "Honda CR-V",
 };
 
-export const MODELS = ["prado", "hilux", "hiace"] as const;
+export const MODELS = Object.keys(MODEL_LABELS);
 
-export type Model = (typeof MODELS)[number];
+export type Model = string;
 
 export function getAllCars(): Car[] {
   return (carsData as CarsData).cars;
@@ -56,7 +72,7 @@ export function getUpdatedAt(): string {
 }
 
 export function isModel(model: string): model is Model {
-  return MODELS.includes(model as Model);
+  return MODELS.includes(model);
 }
 
 export function sortNewestFirst(cars: Car[]): Car[] {

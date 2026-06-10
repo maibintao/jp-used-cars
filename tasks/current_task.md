@@ -1,293 +1,301 @@
-## Task: GitHub Actions Daily Update + Vercel Deployment
+## Task: Add 14 New Models + Fix Translation + Unlimited Images
 **Status**: ready
 **Assigned to**: codex
-**Day**: 6 of 6
+**Day**: 7 (improvements)
 **Project root**: /Users/yuyanli/used-car-site
 
 ---
 
-## Background
+## Three Problems to Fix
 
-The scraper pipeline is fully working (90 cars, 10 images each, translated,
-USD prices). The Next.js site builds clean. Day 6 wires everything together:
-automated daily scraping via GitHub Actions, and live deployment on Vercel.
-
----
-
-## Objective
-
-1. Fix GitHub Actions workflow to correctly run the Python pipeline
-2. Add a workflow that commits updated `cars.json` and triggers Vercel redeploy
-3. Create `vercel.json` config for correct Next.js deployment
-4. Write a `scripts/health_check.py` that validates pipeline output
-5. Add a `DEPLOYMENT.md` guide for the one-time setup steps
+### Problem 1 — Add 14 new car models
+### Problem 2 — Incomplete translation (Japanese tokens in title_en, specs not translated)
+### Problem 3 — Image cap at 10 — raise to 20
 
 ---
 
-## Step 1 — Fix .github/workflows/daily_scrape.yml
+## Fix 1 — Find correct carsensor URLs and add to config.yaml
 
-The existing workflow at `.github/workflows/daily_scrape.yml` has issues.
-Rewrite it completely:
+First, find the correct search URLs for each model by fetching carsensor.net
+search pages. Use this pattern to discover CARC codes:
 
-```yaml
-# .github/workflows/daily_scrape.yml
-name: Daily Car Data Update
-
-on:
-  schedule:
-    - cron: "0 1 * * *"   # UTC 01:00 = JST 10:00 every day
-  workflow_dispatch:        # Allow manual trigger from GitHub UI
-
-jobs:
-  scrape-and-deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run scraper pipeline
-        run: python main.py
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-      - name: Validate output
-        run: python scripts/health_check.py
-
-      - name: Commit updated cars.json
-        run: |
-          git config user.email "bot@jpusedcars.com"
-          git config user.name "Daily Update Bot"
-          git add website/public/data/cars.json
-          git diff --staged --quiet && echo "No changes" || \
-            git commit -m "data: daily update $(date -u +%Y-%m-%d)"
-
-      - name: Push changes
-        run: git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "::error::Daily scrape failed. Check logs above."
+```
+https://www.carsensor.net/usedcar/search.php?BRDC=XX&CARC=XX_SXXX
 ```
 
+Brand codes:
+- Toyota: TO
+- Nissan: NS
+- Mazda: MA
+- Audi: AU
+- Lexus: LE
+- Mitsubishi: MI
+- Honda: HO
+
+For each model below, fetch a candidate URL, verify it returns listings
+(status 200 + contains car cards), then add to config.yaml.
+
+**Models to add:**
+
+| Model name (key) | Display name | Japanese name | Brand |
+|-----------------|--------------|---------------|-------|
+| `landcruiser` | Toyota Land Cruiser | ランドクルーザー | TO |
+| `harrier` | Toyota Harrier | ハリアー | TO |
+| `rav4` | Toyota RAV4 | RAV4 | TO |
+| `crown` | Toyota Crown | クラウン | TO |
+| `voxy` | Toyota Voxy | ヴォクシー | TO |
+| `noah` | Toyota Noah | ノア | TO |
+| `alphard` | Toyota Alphard | アルファード | TO |
+| `lexus_lx` | Lexus LX | LX | LE |
+| `xtrail` | Nissan X-Trail | エクストレール | NS |
+| `cx3` | Mazda CX-3 | CX-3 | MA |
+| `cx5` | Mazda CX-5 | CX-5 | MA |
+| `audi_q7` | Audi Q7 | Q7 | AU |
+| `audi_q8` | Audi Q8 | Q8 | AU |
+| `pajero` | Mitsubishi Pajero | パジェロ | MI |
+| `crv` | Honda CR-V | CR-V | HO |
+
+**Strategy to find each URL:**
+1. Go to https://www.carsensor.net/usedcar/search.php?BRDC=TO (for Toyota)
+2. Fetch the page and look for links matching each model name
+3. Extract the CARC parameter from the link
+4. Verify by fetching the model page and checking for car listings
+
+Use `max_pages: 3` for all new models (to keep pipeline time reasonable).
+
 ---
 
-## Step 2 — Health check script
+## Fix 2 — Expand vocabulary + improve translation
 
-Create `scripts/health_check.py`:
+### 2a — Add to processor/vocabulary.py VOCAB dict:
 
 ```python
-#!/usr/bin/env python3
-"""
-Validates cars.json output after pipeline run.
-Exits with code 1 if validation fails (causes GitHub Actions to fail).
-"""
-import json
-import sys
-from pathlib import Path
-from datetime import datetime, timezone
+# Interior / equipment
+"中期": "mid-spec",
+"前期": "early model",
+"後期": "late model",
+"純正": "OEM",
+"ナビTV": "nav/TV",
+"フルセグ": "full-seg TV",
+"全周囲カメラ": "360° camera",
+"パノラマモニター": "panoramic monitor",
+"ドラレコ": "dashcam",
+"ドライブレコーダー": "dashcam",
+"クラッツィオ": "Clazzio",
+"シートカバー": "seat covers",
+"センターデフロック": "centre diff lock",
+"リフトアップ": "lift-up",
+"ローダウン": "lowered",
+"ムーンルーフ": "moonroof",
+"フリップダウン": "flip-down monitor",
+"両側電動スライドドア": "dual power sliding doors",
+"電動スライドドア": "power sliding door",
+"パワーバックドア": "power tailgate",
+"シートヒーター": "heated seats",
+"ベンチレーション": "ventilated seats",
+"メモリーシート": "memory seats",
+"ハンドルヒーター": "heated steering wheel",
+"ステアリングヒーター": "heated steering wheel",
 
-CARS_JSON = Path("website/public/data/cars.json")
-MIN_CARS = 50          # Alert if we get fewer than this
-MIN_AVG_IMAGES = 3.0   # Alert if average images drops below this
-REQUIRED_FIELDS = {
-    "source_id", "model", "title_ja", "year",
-    "price_jpy", "price_usd", "total_usd",
-    "images", "detail_url", "scraped_at",
+# Safety
+"レーダークルーズ": "radar cruise control",
+"衝突軽減": "collision mitigation",
+"車線逸脱": "lane departure warning",
+"ブラインドスポット": "blind spot monitor",
+"パーキングサポート": "parking assist",
+"自動ブレーキ": "auto brake",
+"プリクラッシュ": "pre-crash safety",
+
+# Wheels / exterior
+"インチアップ": "upgraded wheels",
+"オーバーフェンダー": "overfenders",
+"LEDヘッド": "LED headlights",
+"LEDテール": "LED tail lights",
+"フォグランプ": "fog lights",
+"ルーフキャリア": "roof carrier",
+"ルーフラック": "roof rack",
+"牽引フック": "tow hook",
+"リアラダー": "rear ladder",
+
+# Specs table keys
+"排気量": "Engine Displacement",
+"燃料": "Fuel",
+"車体色": "Color",
+"定員": "Seating Capacity",
+"車体": "Body Type",
+"ミッション": "Transmission",
+"駆動方式": "Drive Type",
+"ドア数": "Doors",
+"乗車定員": "Seating",
+"修復歴": "Accident History",
+"保証": "Warranty",
+"車検": "Inspection",
+"走行距離": "Mileage",
+"年式": "Year",
+"排気量": "Displacement",
+"最大積載量": "Max load",
+"車両重量": "Vehicle weight",
+"全長": "Length",
+"全幅": "Width",
+"全高": "Height",
+"ホイールベース": "Wheelbase",
+
+# Condition
+"ワンオーナー": "One owner",
+"記録簿": "Service records",
+"車検整備付": "Inspection included",
+"保証付": "Warranty included",
+"右ハンドル": "Right-hand drive",
+"左ハンドル": "Left-hand drive",
+
+# Interior colors
+"ベージュ内装": "beige interior",
+"黒内装": "black interior",
+"ブラック内装": "black interior",
+"グレー内装": "grey interior",
+"ブラウン内装": "brown interior",
+
+# Audio brands
+"カロッツェリア": "Pioneer",
+"パイオニア": "Pioneer",
+"ケンウッド": "Kenwood",
+"クラリオン": "Clarion",
+"アルパイン": "Alpine",
+
+# Spec qualifiers
+"ターボ": "Turbo",
+"ディーゼルターボ": "Diesel Turbo",
+"ロング": "long wheelbase",
+"ハイルーフ": "high roof",
+"標準ルーフ": "standard roof",
+"ワイド": "wide body",
+"スーパーロング": "super long",
+
+# Inspection year shortcuts
+"検R9年": "JCI exp.2027",
+"検R8年": "JCI exp.2026",
+"検R7年": "JCI exp.2025",
+"検R6年": "JCI exp.2024",
+"R9年": "2027",
+"R8年": "2026",
+"R7年": "2025",
+"R6年": "2024",
+```
+
+### 2b — Update translate_title() in processor/translator.py:
+
+```python
+MODEL_NAMES = {
+    "ランドクルーザープラド": "Land Cruiser Prado",
+    "ランドクルーザー": "Land Cruiser",
+    "ハイラックス": "Hilux",
+    "ハイエース": "HiAce",
+    "アルファード": "Alphard",
+    "ヴェルファイア": "Vellfire",
+    "ヴォクシー": "Voxy",
+    "ノア": "Noah",
+    "ハリアー": "Harrier",
+    "クラウン": "Crown",
+    "エクストレール": "X-Trail",
+    "パジェロ": "Pajero",
+    "プリウス": "Prius",
+    "レクサス": "Lexus",
 }
-
-def main():
-    if not CARS_JSON.exists():
-        print("❌ cars.json not found")
-        sys.exit(1)
-
-    data = json.loads(CARS_JSON.read_text())
-    cars = data.get("cars", [])
-    errors = []
-
-    # Check total count
-    if len(cars) < MIN_CARS:
-        errors.append(f"Only {len(cars)} cars (expected ≥ {MIN_CARS})")
-
-    # Check required fields
-    for i, car in enumerate(cars[:5]):  # spot-check first 5
-        missing = REQUIRED_FIELDS - set(car.keys())
-        if missing:
-            errors.append(f"Car {i} missing fields: {missing}")
-
-    # Check models present
-    models = {c["model"] for c in cars}
-    for m in ["prado", "hilux", "hiace"]:
-        if m not in models:
-            errors.append(f"Model '{m}' missing from output")
-
-    # Check image counts
-    img_counts = [len(c.get("images", [])) for c in cars]
-    avg_images = sum(img_counts) / len(img_counts) if img_counts else 0
-    if avg_images < MIN_AVG_IMAGES:
-        errors.append(f"Avg images {avg_images:.1f} < {MIN_AVG_IMAGES}")
-
-    # Check prices converted
-    priced = [c for c in cars if c.get("price_usd") is not None]
-    if len(priced) < len(cars) * 0.7:
-        errors.append(f"Only {len(priced)}/{len(cars)} cars have USD price")
-
-    if errors:
-        print("❌ Health check FAILED:")
-        for e in errors:
-            print(f"   • {e}")
-        sys.exit(1)
-
-    print(f"✅ Health check passed:")
-    print(f"   • {len(cars)} cars across {len(models)} models")
-    print(f"   • {avg_images:.1f} avg images per car")
-    print(f"   • {len(priced)} cars with USD price")
-    print(f"   • Updated at: {data.get('updated_at')}")
-
-if __name__ == "__main__":
-    main()
 ```
 
-Also create `scripts/__init__.py` (empty).
+Split title into space-separated tokens, look each one up in VOCAB,
+replace if found, keep original if not. Join with spaces.
 
----
+### 2c — Add specs_en to translate_car():
 
-## Step 3 — Vercel config
+```python
+def translate_specs(specs: dict) -> dict:
+    from .vocabulary import VOCAB
+    result = {}
+    for key, value in specs.items():
+        en_key = VOCAB.get(key.strip(), key)
+        en_value = VOCAB.get(str(value).strip(), value) if value else value
+        result[en_key] = en_value
+    return result
 
-Create `vercel.json` in the project root:
-
-```json
-{
-  "buildCommand": "cd website && npm install && npm run build",
-  "outputDirectory": "website/.next",
-  "installCommand": "cd website && npm install",
-  "framework": "nextjs",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
-}
-```
-
-Also create `website/.env.production` with placeholder:
-```
-NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+def translate_car(car: dict) -> dict:
+    return {
+        **car,
+        "title_en": translate_title(car.get("title_ja")),
+        "color_en": translate_color(car.get("color_ja")),
+        "description_en": translate_description(car.get("description_ja")),
+        "specs_en": translate_specs(car.get("specs", {})),
+    }
 ```
 
 ---
 
-## Step 4 — Update .gitignore
+## Fix 3 — Raise image cap to 20
 
-Make sure these are in `.gitignore`:
-```
-.env
-.env.local
-.env.production.local
-.venv/
-venv/
-.DS_Store
-website/.DS_Store
-website/node_modules/
-website/.next/
-*.pyc
-__pycache__/
-tasks/codex_output.diff
+In `scraper/detail_scraper.py`:
+- Change `>= 10` to `>= 20`
+- Update docstring from "max 10" to "max 20"
+
+---
+
+## Fix 4 — Update website/lib/cars.ts
+
+```typescript
+export const MODEL_LABELS: Record<string, string> = {
+  prado: "Toyota Land Cruiser Prado",
+  hilux: "Toyota Hilux",
+  hiace: "Toyota HiAce",
+  landcruiser: "Toyota Land Cruiser",
+  harrier: "Toyota Harrier",
+  rav4: "Toyota RAV4",
+  crown: "Toyota Crown",
+  voxy: "Toyota Voxy",
+  noah: "Toyota Noah",
+  alphard: "Toyota Alphard",
+  lexus_lx: "Lexus LX",
+  xtrail: "Nissan X-Trail",
+  cx3: "Mazda CX-3",
+  cx5: "Mazda CX-5",
+  audi_q7: "Audi Q7",
+  audi_q8: "Audi Q8",
+  pajero: "Mitsubishi Pajero",
+  crv: "Honda CR-V",
+};
+
+export const MODELS = Object.keys(MODEL_LABELS) as string[];
 ```
 
 ---
 
-## Step 5 — DEPLOYMENT.md
+## Step 5 — Run full pipeline
 
-Create `DEPLOYMENT.md` at project root:
-
-```markdown
-# Deployment Guide
-
-## One-Time Setup
-
-### 1. GitHub Repository
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/jp-used-cars.git
-git push -u origin main
+python3 main.py
 ```
 
-### 2. GitHub Secrets
-Go to: Settings → Secrets → Actions → New repository secret
-
-| Secret | Value |
-|--------|-------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key (optional, for Claude translation) |
-
-Note: `GITHUB_TOKEN` is automatically provided by GitHub Actions.
-
-### 3. Vercel Deployment
-1. Go to [vercel.com](https://vercel.com) → New Project
-2. Import your GitHub repository
-3. Framework: **Next.js**
-4. Root directory: `website`
-5. Build command: `npm run build`
-6. Click Deploy
-
-### 4. Connect Vercel to GitHub Actions (auto-redeploy)
-Vercel automatically redeploys when `main` branch is updated.
-The daily GitHub Action commits updated `cars.json` → triggers Vercel redeploy.
-
-### 5. WhatsApp Number
-Update the inquiry number in:
-`website/app/car/[id]/page.tsx` — find `whatsappNumber` const and update it.
-
-## Daily Update Flow
-```
-GitHub Actions (UTC 01:00)
-  → python main.py          # scrape + translate + convert
-  → health_check.py         # validate output
-  → git commit cars.json    # commit new data
-  → git push                # triggers Vercel redeploy
-  → Vercel rebuilds site    # new listings live within ~2 min
-```
-
-## Manual Trigger
-Go to: GitHub → Actions → "Daily Car Data Update" → Run workflow
-
-## Monitoring
-- GitHub Actions: check the Actions tab for daily run status
-- If a run fails, GitHub sends an email to the repo owner
-```
+This will take 20-40 minutes. Print progress as it runs.
 
 ---
 
 ## Output Files
 
 ```
-.github/workflows/daily_scrape.yml   ← REWRITTEN
-scripts/__init__.py                  ← NEW (empty)
-scripts/health_check.py              ← NEW
-vercel.json                          ← NEW
-website/.env.production              ← NEW
-.gitignore                           ← UPDATED
-DEPLOYMENT.md                        ← NEW
+config.yaml                   ← UPDATED (14 new models)
+processor/vocabulary.py       ← UPDATED (expanded VOCAB)
+processor/translator.py       ← UPDATED (better title + specs_en)
+scraper/detail_scraper.py     ← UPDATED (image cap 10→20)
+website/lib/cars.ts           ← UPDATED (all models)
+website/public/data/cars.json ← REGENERATED
 ```
 
 ---
 
 ## Hard Constraints
 
-1. **Do NOT modify any Python scraper or processor files**
-2. **Do NOT modify any website frontend files**
-3. **Do NOT run the full pipeline** — it takes too long, just validate existing cars.json
-4. **health_check.py must pass on current cars.json**
+1. **Verify each new model URL actually returns listings** before adding
+2. **skip_details=False** for final run — real images required
+3. **Never crash on missing model** — if a URL returns 0 cars, skip silently
+4. **Keep all _ja fields** intact
 
 ---
 
@@ -296,30 +304,34 @@ DEPLOYMENT.md                        ← NEW
 ```bash
 cd /Users/yuyanli/used-car-site
 
-# Health check must pass on current data
 python3 scripts/health_check.py
 
-# Validate GitHub Actions YAML syntax
-python3 -c "
-import yaml
-with open('.github/workflows/daily_scrape.yml') as f:
-    workflow = yaml.safe_load(f)
-print('Workflow name:', workflow['name'])
-print('Triggers:', list(workflow['on'].keys()))
-print('Jobs:', list(workflow['jobs'].keys()))
-print('Steps:', len(workflow['jobs']['scrape-and-deploy']['steps']))
-print('YAML valid ✅')
-"
-
-# Validate vercel.json
 python3 -c "
 import json
-with open('vercel.json') as f:
-    v = json.load(f)
-print('vercel.json valid ✅')
-print('Build command:', v['buildCommand'])
+from pathlib import Path
+from collections import Counter
+data = json.loads(Path('website/public/data/cars.json').read_text())
+cars = data['cars']
+models = Counter(c['model'] for c in cars)
+print('Models found:')
+for m, n in sorted(models.items()):
+    print(f'  {m}: {n} cars')
+print('Total:', len(cars))
+
+sample = cars[0]
+print()
+print('title_en:', sample['title_en'])
+print('specs_en:', list(sample.get('specs_en', {}).items())[:3])
+img_counts = [len(c['images']) for c in cars]
+print(f'Avg images: {sum(img_counts)/len(img_counts):.1f}')
+print(f'Max images: {max(img_counts)}')
 "
 
-# Git status should be clean after commit
-git status
+cd website && npm run build
 ```
+
+Expected:
+- 10+ models in output (some may have 0 listings on carsensor — skip those)
+- `title_en` has less Japanese
+- `specs_en` keys in English
+- Max images ≥ 11
