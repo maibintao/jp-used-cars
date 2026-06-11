@@ -97,18 +97,23 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
   );
   const emailUrl = `mailto:info@jpusedcars.com?subject=${emailSubject}&body=${emailBody}`;
 
-  // Show only meaningful car specs: English keys, short values, skip price/admin rows
+  // Only show technical car specs — exclude all Japan domestic pricing/financing/admin rows
   const CJK = /[　-鿿＀-￯]/;
-  const SKIP_KEYS = /プラン|支払|諸費用|車両本体|発売年月|車台|残価|対象車両|納車前|部品交換|サービス|回転半径|室内|シート列|燃費|Bプラン/;
+  const SKIP_KEYS = /plan|payment|loan|installment|miscellaneous|vehicle price|tax|bonus|monthly|down payment|total number|annual rate|residual|pre-delivery|parts replace|service|turning radius|indoor|seat row|fuel efficiency|fuel economy|release date|chassis|target vehicle|warranty period|warranty contents|warranty content|legal maint/i;
+  const SKIP_VALUES = /プラン|万円|回$|お問い合わせ|点検|修理|サービス|Sローン|登録.*年/;
+  const USEFUL_KEYS = /year|mileage|accident|inspection|color|drive|transmission|engine|displacement|seating|door|body type|wheelbase|weight|dimension|fuel|recycling|one owner|maintenance record|non-smoking|official import|new vehicle|welfare|camper/i;
+
   const specs = Object.entries(car.specs_en ?? car.specs).filter(
-    ([k, v]) =>
-      k &&
-      !CJK.test(k) &&
-      !SKIP_KEYS.test(k) &&
-      v != null &&
-      String(v).trim() !== "" &&
-      String(v).trim() !== "－" &&
-      String(v).length < 120,
+    ([k, v]) => {
+      if (!k) return false;
+      if (CJK.test(String(k))) return false;
+      if (SKIP_KEYS.test(String(k))) return false;
+      const val = String(v ?? "").trim();
+      if (!val || val === "－" || val === "−" || val === "—") return false;
+      if (SKIP_VALUES.test(val)) return false;
+      if (val.length > 150) return false;
+      return USEFUL_KEYS.test(String(k));
+    }
   );
 
   return (

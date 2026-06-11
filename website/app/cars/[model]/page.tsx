@@ -36,19 +36,19 @@ export default function ModelPage({ params }: ModelPageProps) {
   const label = activeModel ? MODEL_LABELS[activeModel] : params.model;
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-amber-50">
       <Header active={activeModel} />
 
       {/* Page header */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 py-8">
+      <div className="bg-gradient-to-r from-green-900 via-green-800 to-emerald-900 py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-sm font-medium text-blue-200 hover:text-white">
+          <Link href="/" className="text-sm font-medium text-green-300 hover:text-amber-400">
             ← All Models
           </Link>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             {label}
           </h1>
-          <p className="mt-1 text-blue-200 text-sm">
+          <p className="mt-1 text-green-300 text-sm">
             All prices include shipping (C&F) — ready to import
           </p>
         </div>
