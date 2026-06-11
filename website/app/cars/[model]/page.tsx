@@ -1,19 +1,17 @@
 import Link from "next/link";
-import CarCard from "@/components/CarCard";
 import Header from "@/components/Header";
+import CarGrid from "@/components/CarGrid";
 import {
   getCarsByModel,
   isModel,
   MODEL_LABELS,
   MODELS,
-  type Model,
   sortNewestFirst,
+  type Model,
 } from "@/lib/cars";
 
 interface ModelPageProps {
-  params: {
-    model: string;
-  };
+  params: { model: string };
 }
 
 export const dynamicParams = false;
@@ -24,63 +22,45 @@ export async function generateStaticParams() {
 
 export function generateMetadata({ params }: ModelPageProps) {
   const label = isModel(params.model) ? MODEL_LABELS[params.model] : params.model;
-  const image = getCarsByModel(params.model).find((car) => car.images[0])
-    ?.images[0];
-
+  const image = getCarsByModel(params.model).find((car) => car.images[0])?.images[0];
   return {
-    title: label,
-    description: `Browse used ${label} listings imported from Japan. All prices include shipping.`,
-    openGraph: {
-      images: image ? [{ url: image }] : [],
-    },
+    title: `${label} — Japan Used Cars`,
+    description: `Browse used ${label} listings imported from Japan. All prices include C&F shipping.`,
+    openGraph: { images: image ? [{ url: image }] : [] },
   };
 }
 
 export default function ModelPage({ params }: ModelPageProps) {
-  const activeModel: Model | undefined = isModel(params.model)
-    ? params.model
-    : undefined;
-  const cars = activeModel
-    ? sortNewestFirst(getCarsByModel(activeModel))
-    : [];
+  const activeModel: Model | undefined = isModel(params.model) ? params.model : undefined;
+  const cars = activeModel ? sortNewestFirst(getCarsByModel(activeModel)) : [];
+  const label = activeModel ? MODEL_LABELS[activeModel] : params.model;
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="min-h-screen bg-slate-50">
       <Header active={activeModel} />
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <Link
-              href="/"
-              className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
-            >
-              &lt;- Home
-            </Link>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              {activeModel
-                ? `${MODEL_LABELS[activeModel]} — ${cars.length} listings`
-                : "No listings found"}
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Sorted by newest scraped listings first.
-            </p>
-          </div>
-        </div>
 
+      {/* Page header */}
+      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="text-sm font-medium text-blue-200 hover:text-white">
+            ← All Models
+          </Link>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            {label}
+          </h1>
+          <p className="mt-1 text-blue-200 text-sm">
+            All prices include shipping (C&F) — ready to import
+          </p>
+        </div>
+      </div>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {cars.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {cars.map((car) => (
-              <CarCard key={car.source_id} car={car} />
-            ))}
-          </div>
+          <CarGrid cars={cars} modelLabel={label} />
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-lg font-semibold text-slate-950">
-              No listings found
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Please choose Prado, Hilux, or HiAce from the navigation.
-            </p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <p className="text-lg font-bold text-slate-700">No listings found</p>
+            <p className="mt-1 text-sm text-slate-500">Please select a model from the navigation.</p>
           </div>
         )}
       </section>

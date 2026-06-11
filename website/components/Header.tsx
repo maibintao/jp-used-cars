@@ -7,40 +7,63 @@ interface HeaderProps {
   active?: ActiveNav;
 }
 
-function navClass(isActive: boolean): string {
-  return [
-    "flex-shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition",
-    isActive
-      ? "bg-white text-slate-950"
-      : "text-slate-200 hover:bg-slate-800 hover:text-white",
-  ].join(" ");
-}
-
 export default function Header({ active }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/95 text-white backdrop-blur">
-      <nav className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-        <Link href="/" className="text-lg font-bold tracking-tight">
-          JP Used Cars
-        </Link>
-        <div className="-mx-4 flex overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-          <Link href="/" className={navClass(active === "home")}>
-            Home
+    <header className="sticky top-0 z-30 shadow-md">
+      {/* Top bar */}
+      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-base font-black text-white">JP</span>
+            <span className="text-lg font-extrabold tracking-tight text-white">
+              Japan Used Cars
+            </span>
           </Link>
-          {MODELS.map((model) => (
-            <Link
-              key={model}
-              href={`/cars/${model}`}
-              className={navClass(active === model)}
-            >
-              {MODEL_LABELS[model].replace("Toyota ", "")}
-            </Link>
-          ))}
-          <a href="mailto:info@jpusedcars.com" className={navClass(active === "contact")}>
-            Contact
+          <a
+            href="mailto:info@jpusedcars.com"
+            className="hidden rounded-full border border-white/40 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 sm:block"
+          >
+            ✉ Contact Us
           </a>
         </div>
-      </nav>
+      </div>
+
+      {/* Nav bar */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="-mx-4 flex overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+            <Link
+              href="/"
+              className={`flex-shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition whitespace-nowrap ${
+                active === "home"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-600 hover:text-blue-600"
+              }`}
+            >
+              All Models
+            </Link>
+            {MODELS.map((model) => (
+              <Link
+                key={model}
+                href={`/cars/${model}`}
+                className={`flex-shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition whitespace-nowrap ${
+                  active === model
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-slate-600 hover:text-blue-600"
+                }`}
+              >
+                {MODEL_LABELS[model]
+                  .replace("Toyota ", "")
+                  .replace("Mitsubishi ", "")
+                  .replace("Nissan ", "")
+                  .replace("Mazda ", "")
+                  .replace("Honda ", "")
+                  .replace("Lexus ", "Lexus ")}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
     </header>
   );
 }
