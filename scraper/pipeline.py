@@ -66,6 +66,12 @@ def run(skip_details: bool = False) -> list[dict]:
         car = process_car_price(car, config)
         enriched.append(car)
 
+    min_price = config.get("price", {}).get("min_total_usd", 0)
+    if min_price:
+        before = len(enriched)
+        enriched = [c for c in enriched if (c.get("total_usd") or 0) >= min_price]
+        print(f"🚫 Filtered {before - len(enriched)} cars below ${min_price} (kept {len(enriched)})")
+
     _export(enriched, OUTPUT_PATH)
     return enriched
 

@@ -12,12 +12,11 @@ export const metadata = {
 };
 
 const BRAND_GROUPS = [
-  { brand: "Toyota", emoji: "🚙", models: ["prado","hilux","hiace","landcruiser","harrier","rav4","crown","voxy","noah","alphard"] },
-  { brand: "Lexus",  emoji: "🏆", models: ["lexus_lx"] },
+  { brand: "Toyota", emoji: "🚙", models: ["hilux","landcruiser","prado","lc250","hiace","harrier","alphard","voxy","rav4","prius","noah","crown"] },
+  { brand: "Suzuki", emoji: "🚙", models: ["jimny"] },
   { brand: "Nissan", emoji: "🚗", models: ["xtrail"] },
-  { brand: "Mazda",  emoji: "🚗", models: ["cx3","cx5"] },
-  { brand: "Audi",   emoji: "💎", models: ["audi_q7","audi_q8"] },
-  { brand: "Mitsubishi", emoji: "🚙", models: ["pajero"] },
+  { brand: "Mazda",  emoji: "🚗", models: ["cx5"] },
+  { brand: "Mitsubishi", emoji: "🚙", models: ["pajero","triton"] },
   { brand: "Honda",  emoji: "🚗", models: ["crv"] },
 ];
 
@@ -71,7 +70,7 @@ export default function Home() {
                 Toyota Hilux
               </Link>
               <Link href="/cars/landcruiser" className="rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/20">
-                Land Cruiser 300
+                Land Cruiser
               </Link>
             </div>
           </div>

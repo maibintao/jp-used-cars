@@ -31,24 +31,24 @@ export interface CarsData {
 }
 
 export const MODEL_LABELS: Record<string, string> = {
-  prado: "Toyota Land Cruiser Prado",
   hilux: "Toyota Hilux",
-  hiace: "Toyota HiAce",
   landcruiser: "Toyota Land Cruiser",
+  prado: "Toyota Land Cruiser Prado",
+  hiace: "Toyota HiAce Van",
   harrier: "Toyota Harrier",
-  rav4: "Toyota RAV4",
-  crown: "Toyota Crown",
-  voxy: "Toyota Voxy",
-  noah: "Toyota Noah",
   alphard: "Toyota Alphard",
-  lexus_lx: "Lexus LX",
+  voxy: "Toyota Voxy",
+  rav4: "Toyota RAV4",
+  prius: "Toyota Prius",
   xtrail: "Nissan X-Trail",
-  cx3: "Mazda CX-3",
+  noah: "Toyota Noah",
+  jimny: "Suzuki Jimny",
   cx5: "Mazda CX-5",
-  audi_q7: "Audi Q7",
-  audi_q8: "Audi Q8",
+  crown: "Toyota Crown",
   pajero: "Mitsubishi Pajero",
+  triton: "Mitsubishi Triton",
   crv: "Honda CR-V",
+  lc250: "Toyota Land Cruiser 250",
 };
 
 export const MODELS = Object.keys(MODEL_LABELS);
