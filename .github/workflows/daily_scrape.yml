@@ -40,7 +40,9 @@ jobs:
             git commit -m "data: daily update $(date -u +%Y-%m-%d)"
 
       - name: Push changes
-        run: git push
+        run: |
+          git pull --rebase origin main
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

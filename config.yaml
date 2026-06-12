@@ -3,78 +3,78 @@ target_models:
   - name: hilux
     display_name: "Toyota Hilux"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S112"
-    max_pages: 10
+    max_pages: 5
   - name: landcruiser
     display_name: "Toyota Land Cruiser"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S253"
-    max_pages: 10
+    max_pages: 5
   - name: prado
     display_name: "Toyota Land Cruiser Prado"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S152"
-    max_pages: 10
+    max_pages: 5
   - name: hiace
     display_name: "Toyota HiAce Van"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S185"
-    max_pages: 10
+    max_pages: 5
   - name: harrier
     display_name: "Toyota Harrier"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S114"
-    max_pages: 10
-  # ── HIGH TIER (8 pages ~80 cars) ──
+    max_pages: 5
+  # ── HIGH TIER ──
   - name: alphard
     display_name: "Toyota Alphard"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S009"
-    max_pages: 8
+    max_pages: 4
   - name: voxy
     display_name: "Toyota Voxy"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S021"
-    max_pages: 8
+    max_pages: 4
   - name: rav4
     display_name: "Toyota RAV4"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S147"
-    max_pages: 8
+    max_pages: 4
   - name: prius
     display_name: "Toyota Prius"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S122"
-    max_pages: 8
+    max_pages: 4
   - name: xtrail
     display_name: "Nissan X-Trail"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=NI_S020"
-    max_pages: 8
-  # ── MEDIUM TIER (6 pages ~60 cars) ──
+    max_pages: 4
+  # ── MEDIUM TIER ──
   - name: noah
     display_name: "Toyota Noah"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S108"
-    max_pages: 6
+    max_pages: 3
   - name: jimny
     display_name: "Suzuki Jimny"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=SZ_S010"
-    max_pages: 6
+    max_pages: 3
   - name: cx5
     display_name: "Mazda CX-5"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=MA_S087"
-    max_pages: 6
+    max_pages: 3
   - name: crown
     display_name: "Toyota Crown"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S055"
-    max_pages: 6
-  # ── LOWER TIER (4 pages ~40 cars) ──
+    max_pages: 3
+  # ── LOWER TIER ──
   - name: pajero
     display_name: "Mitsubishi Pajero"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=MI_S012"
-    max_pages: 4
+    max_pages: 2
   - name: triton
     display_name: "Mitsubishi Triton"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=MI_S088"
-    max_pages: 4
+    max_pages: 2
   - name: crv
     display_name: "Honda CR-V"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=HO_S018"
-    max_pages: 4
+    max_pages: 2
   - name: lc250
     display_name: "Toyota Land Cruiser 250"
     url: "https://www.carsensor.net/usedcar/search.php?CARC=TO_S269"
-    max_pages: 4
+    max_pages: 2
 
 shipping:
   default_usd: 2500
