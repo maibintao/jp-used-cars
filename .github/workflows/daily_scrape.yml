@@ -3,7 +3,7 @@ name: Daily Car Data Update
 "on":
   schedule:
     - cron: "0 1 * * *"   # UTC 01:00 = JST 10:00 every day
-  workflow_dispatch:        # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   scrape-and-deploy:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history so rebase works cleanly
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,22 +31,22 @@ jobs:
       - name: Validate output
         run: python scripts/health_check.py
 
-      - name: Commit updated cars.json
-        run: |
-          git config user.email "bot@jpusedcars.com"
-          git config user.name "Daily Update Bot"
-          git add website/public/data/cars.json
-          git diff --staged --quiet && echo "No changes" || \
-            git commit -m "data: daily update $(date -u +%Y-%m-%d)"
-
-      - name: Push changes (with retry on conflict)
+      - name: Commit and push cars.json
         run: |
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
-            echo "Push attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
+          git config user.email "bot@jpusedcars.com"
+          git config user.name "Daily Update Bot"
+
+          # Sync to latest remote state (keeps generated cars.json on disk)
+          git fetch origin main
+          git reset --soft origin/main
+
+          # Commit only cars.json on top of latest remote
+          git add website/public/data/cars.json
+          git diff --staged --quiet && echo "No changes, skipping push." || (
+            git commit -m "data: daily update $(date -u +%Y-%m-%d)" &&
+            git push
+          )
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
