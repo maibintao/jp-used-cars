@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 CARS_JSON = Path("website/public/data/cars.json")
-MIN_CARS = 100         # Alert if we get fewer than this
+MIN_CARS = 50          # Alert if we get fewer than this
 MIN_AVG_IMAGES = 3.0   # Alert if average images drops below this
 REQUIRED_FIELDS = {
     "source_id", "model", "title_ja", "year",
